@@ -66,7 +66,7 @@ public class UserServiceImpl implements UserService {
 
     private void setRedisForObject(SysUser user){
         if (user == null) {
-            redisTemplate.opsForValue().set(RedisConstant.REIDS_USER_PREFIX + user.getUserId(), null);
+            redisTemplate.opsForValue().set(RedisConstant.REIDS_USER_PREFIX + user.getUserId(), new SysUser());
             redisTemplate.expire(RedisConstant.REIDS_USER_PREFIX + user.getUserId(), RedisConstant.REDIS_USER_NULL_EXPIRE, TimeUnit.SECONDS);
         } else {
             user.setPassword(null);
