@@ -5,8 +5,8 @@ package com.jxph.cloud.common.enums;
  * @date 2018/9/1 14:50
  */
 public enum ResultCodeEnum {
-    SUCCESS(0200),
-    FAILURE(0500),
+    SUCCESS(200),
+    FAILURE(500),
     // -------------------失败状态码----------------------
     // 参数错误
     // 参数为空

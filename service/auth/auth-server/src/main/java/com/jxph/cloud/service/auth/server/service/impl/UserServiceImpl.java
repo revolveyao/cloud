@@ -53,25 +53,35 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional(propagation = Propagation.NOT_SUPPORTED, rollbackFor = Exception.class)
     public SysUser getUserByUserId(Long userId) {
-        Object value = redisTemplate.opsForValue().get(RedisConstant.REIDS_USER_PREFIX + userId.toString());
-        if (value != null) {
-            redisTemplate.expire(RedisConstant.REIDS_USER_PREFIX + userId.toString(), RedisConstant.REDIS_USER_EXPIRE, TimeUnit.SECONDS);
-            return JSONUtils.parse(value.toString(), SysUser.class);
+        Boolean hasKey = redisTemplate.hasKey(RedisConstant.REIDS_USER_PREFIX + userId);
+        if (hasKey) {
+            return getObjectByRedis(userId.toString(), SysUser.class);
         }
+        getObjectByRedis(userId.toString(), SysUser.class);
         SysUser user = sysUserMapper.selectByPrimaryKey(userId);
-        setRedisForObject(user);
+        if(user!=null){
+            user.setPassword(null);
+        }
+        setObjectToRedis(userId.toString(), user);
         return user;
     }
 
+    private <T> T getObjectByRedis(String objectKey, Class<T> clazz) {
+        Object value = redisTemplate.opsForValue().get(RedisConstant.REIDS_USER_PREFIX + objectKey);
+        if (value != null) {
+            redisTemplate.expire(RedisConstant.REIDS_USER_PREFIX + objectKey, RedisConstant.REDIS_USER_EXPIRE, TimeUnit.SECONDS);
+            return JSONUtils.parse(value.toString(), clazz);
+        }
+        return null;
+    }
 
-    private void setRedisForObject(SysUser user){
-        if (user == null) {
-            redisTemplate.opsForValue().set(RedisConstant.REIDS_USER_PREFIX + user.getUserId(), null);
-            redisTemplate.expire(RedisConstant.REIDS_USER_PREFIX + user.getUserId(), RedisConstant.REDIS_USER_NULL_EXPIRE, TimeUnit.SECONDS);
+    private void setObjectToRedis(String objectKey, Object object) {
+        if (object == null) {
+            redisTemplate.opsForValue().set(RedisConstant.REIDS_USER_PREFIX + objectKey, null);
+            redisTemplate.expire(RedisConstant.REIDS_USER_PREFIX + objectKey, RedisConstant.REDIS_USER_NULL_EXPIRE, TimeUnit.SECONDS);
         } else {
-            user.setPassword(null);
-            redisTemplate.opsForValue().set(RedisConstant.REIDS_USER_PREFIX + user.getUserId(), JSONUtils.toJsonString(user));
-            redisTemplate.expire(RedisConstant.REIDS_USER_PREFIX + user.getUserId(), RedisConstant.REDIS_USER_EXPIRE, TimeUnit.SECONDS);
+            redisTemplate.opsForValue().set(RedisConstant.REIDS_USER_PREFIX + objectKey, JSONUtils.toJsonString(object));
+            redisTemplate.expire(RedisConstant.REIDS_USER_PREFIX + objectKey, RedisConstant.REDIS_USER_EXPIRE, TimeUnit.SECONDS);
         }
     }
 }
